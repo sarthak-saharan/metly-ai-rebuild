@@ -1,6 +1,6 @@
 # Metly — AI-First Product Experiment
 
-**Built by:** Sarthak Saharan, Product Manager @ Metly  
+**Built by:** Sarthak Saharan, AI Product Manager  
 **Live demo → [sarthak-saharan.github.io/metly-ai-rebuild](https://sarthak-saharan.github.io/metly-ai-rebuild)**
 
 ---
