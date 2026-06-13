@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Metly — Live Intelligence Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,700;1,9..144,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #f5f4f0;
+      --ink:       #0e0e14;
+      --white:     #ffffff;
+      --gray-mid:  #5a5a6a;
+      --gray-lt:   #9999a8;
+      --purple:    #5b4cdb;
+      --purple-lt: #a78bfa;
+      --amber:     #c98b3e;
+      --blue:      #3b82f6;
+      --green:     #22c55e;
+      --border:    rgba(0,0,0,0.08);
+
+      --r-sm:   6px;
+      --r-card: 10px;
+      --r-lg:   12px;
+      --r-pill: 100px;
+
+      --font-body:    'Inter', -apple-system, sans-serif;
+      --font-display: 'Fraunces', Georgia, serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      font-size: 16px;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* ─── Nav ─── */
+    .nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; height: 56px;
+    }
+
+    .nav-logo img { height: 32px; width: auto; mix-blend-mode: multiply; }
+
+    .nav-links { display: flex; align-items: center; gap: 24px; list-style: none; }
+    .nav-links a { font-size: 13px; font-weight: 500; color: var(--gray-mid); letter-spacing: -0.13px; transition: color 0.15s; }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-cta {
+      background: var(--ink) !important; color: var(--white) !important;
+      padding: 8px 18px; border-radius: var(--r-pill);
+      font-size: 13px; font-weight: 500; transition: opacity 0.15s;
+    }
+    .nav-cta:hover { opacity: 0.82; }
+
+    @media (max-width: 768px) { .nav-links li:not(:last-child) { display: none; } }
+
+    /* ─── Screen system ─── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ─── Progress bar ─── */
+    .quiz-progress {
+      max-width: 560px; margin: 0 auto;
+      padding: 36px 24px 0;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .progress-step {
+      flex: 1; height: 3px; border-radius: 2px;
+      background: var(--border);
+      transition: background 0.4s ease;
+    }
+
+    .progress-step.done { background: var(--ink); }
+    .progress-step.active { background: var(--purple); }
+
+    .progress-label {
+      font-size: 11.5px; font-weight: 500;
+      color: var(--gray-lt); letter-spacing: -0.1px;
+      white-space: nowrap;
+    }
+
+    /* ─── Quiz shared layout ─── */
+    .quiz-wrap {
+      max-width: 840px; margin: 0 auto;
+      padding: 52px 24px 80px;
+    }
+
+    .quiz-step-label {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--purple); margin-bottom: 12px;
+    }
+
+    .quiz-h2 {
+      font-family: var(--font-display);
+      font-size: clamp(26px, 3.5vw, 38px);
+      font-weight: 700; line-height: 1.1;
+      letter-spacing: -0.025em; color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .quiz-h2 em { font-style: italic; color: var(--purple); }
+
+    .quiz-sub {
+      font-size: 14px; color: var(--gray-mid);
+      line-height: 1.6; margin-bottom: 40px;
+    }
+
+    /* ─── Role cards ─── */
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    @media (max-width: 680px) { .role-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 420px) { .role-grid { grid-template-columns: 1fr; } }
+
+    .role-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 22px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+      display: flex; flex-direction: column; gap: 10px;
+      position: relative; overflow: hidden;
+    }
+
+    .role-card:hover {
+      border-color: var(--purple);
+      box-shadow: 0 4px 20px rgba(91,76,219,0.1);
+      transform: translateY(-2px);
+    }
+
+    .role-card.selected {
+      border-color: var(--purple);
+      background: rgba(91,76,219,0.04);
+      box-shadow: 0 4px 24px rgba(91,76,219,0.14);
+    }
+
+    .role-card-icon {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .role-card-title {
+      font-size: 14px; font-weight: 600;
+      color: var(--ink); line-height: 1.25;
+      letter-spacing: -0.15px;
+    }
+
+    .role-card-desc {
+      font-size: 11px; color: var(--gray-lt);
+      line-height: 1.5; letter-spacing: -0.05px;
+      padding-top: 6px;
+      border-top: 1px solid var(--border);
+      margin-top: 2px;
+    }
+
+    .role-card-check {
+      position: absolute; top: 12px; right: 12px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--purple);
+      display: none; align-items: center; justify-content: center;
+    }
+
+    .role-card.selected .role-card-check { display: flex; }
+
+    .role-card-check svg { width: 10px; height: 10px; stroke: white; }
+
+    /* ─── Challenge cards ─── */
+    .challenge-list {
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    .challenge-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 20px 22px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      display: flex; align-items: center; gap: 16px;
+    }
+
+    .challenge-card:hover {
+      border-color: var(--purple);
+      transform: translateX(3px);
+    }
+
+    .challenge-card.selected {
+      border-color: var(--purple);
+      background: rgba(91,76,219,0.04);
+    }
+
+    .challenge-radio {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0; display: flex;
+      align-items: center; justify-content: center;
+      transition: border-color 0.2s;
+    }
+
+    .challenge-card.selected .challenge-radio {
+      border-color: var(--purple);
+      background: var(--purple);
+    }
+
+    .challenge-card.selected .challenge-radio::after {
+      content: ''; width: 7px; height: 7px;
+      border-radius: 50%; background: white;
+    }
+
+    .challenge-text {
+      font-size: 15px; font-weight: 500;
+      color: var(--ink); letter-spacing: -0.2px;
+    }
+
+    /* ─── TA chips (Step 3) ─── */
+    .ta-step-search {
+      display: flex; gap: 8px;
+      max-width: 560px; margin-bottom: 20px;
+    }
+
+    .ta-step-input {
+      flex: 1; height: 48px; padding: 0 18px;
+      border: 1px solid var(--border); border-radius: var(--r-card);
+      background: var(--white); font-family: var(--font-body);
+      font-size: 15px; color: var(--ink); outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .ta-step-input::placeholder { color: var(--gray-lt); }
+    .ta-step-input:focus { border-color: var(--purple); }
+
+    .ta-chips {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    .ta-chip {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--r-pill); padding: 6px 14px;
+      font-size: 12px; font-weight: 500; color: var(--gray-mid);
+      cursor: pointer; transition: all 0.15s; letter-spacing: -0.1px;
+    }
+
+    .ta-chip:hover { border-color: var(--purple); color: var(--purple); background: rgba(91,76,219,0.04); }
+    .ta-chip.selected { border-color: var(--purple); color: var(--purple); background: rgba(91,76,219,0.08); }
+    .ta-chip.clicking { transform: scale(0.96); background: rgba(91,76,219,0.12); border-color: var(--purple); }
+
+    /* ─── Quiz navigation ─── */
+    .quiz-nav {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-top: 36px;
+      padding-top: 28px; border-top: 1px solid var(--border);
+    }
+
+    .btn-back {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 500; color: var(--gray-mid);
+      background: none; border: none; cursor: pointer;
+      letter-spacing: -0.13px; transition: color 0.15s;
+    }
+
+    .btn-back:hover { color: var(--ink); }
+
+    .btn-next {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--ink); color: var(--white);
+      padding: 12px 24px; border-radius: var(--r-pill);
+      font-family: var(--font-body); font-size: 14px; font-weight: 500;
+      letter-spacing: -0.13px; border: none; cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+
+    .btn-next:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-next:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    /* ─── Loading ─── */
+    .loading-screen {
+      max-width: 480px; margin: 0 auto;
+      padding: 100px 24px; text-align: center;
+    }
+
+    .loading-bars {
+      display: flex; align-items: flex-end;
+      justify-content: center; gap: 5px;
+      height: 44px; margin-bottom: 36px;
+    }
+
+    .loading-bar {
+      width: 4px; border-radius: 3px;
+      background: var(--purple); transform-origin: bottom;
+      animation: bar-wave 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+    }
+
+    .loading-bar:nth-child(1) { animation-delay: 0s;    height: 16px; }
+    .loading-bar:nth-child(2) { animation-delay: 0.14s; height: 26px; }
+    .loading-bar:nth-child(3) { animation-delay: 0.28s; height: 40px; }
+    .loading-bar:nth-child(4) { animation-delay: 0.42s; height: 26px; }
+    .loading-bar:nth-child(5) { animation-delay: 0.56s; height: 16px; }
+
+    @keyframes bar-wave {
+      0%   { transform: scaleY(0.3); opacity: 0.35; }
+      35%  { transform: scaleY(1.05); opacity: 1; }
+      65%  { transform: scaleY(1); opacity: 1; }
+      100% { transform: scaleY(0.3); opacity: 0.35; }
+    }
+
+    .loading-role-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--r-pill); padding: 5px 14px;
+      font-size: 12px; font-weight: 500; color: var(--gray-mid);
+      margin-bottom: 24px;
+    }
+
+    .loading-title {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 700;
+      color: var(--ink); margin-bottom: 10px;
+    }
+
+    .loading-title em { font-style: italic; color: var(--purple); }
+
+    .loading-step {
+      font-size: 13px; font-weight: 500;
+      color: var(--gray-lt); letter-spacing: -0.13px;
+      min-height: 20px;
+    }
+
+    .loading-progress {
+      width: 220px; height: 2px; background: var(--border);
+      border-radius: 2px; margin: 20px auto 0; overflow: hidden;
+    }
+
+    .loading-progress-bar {
+      height: 100%; background: var(--purple);
+      border-radius: 2px; width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* ─── Results ─── */
+    .results-screen {
+      max-width: 1100px; margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    .results-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 40px; gap: 18px; flex-wrap: wrap;
+    }
+
+    .results-role-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(91,76,219,0.08);
+      border: 1px solid rgba(91,76,219,0.18);
+      border-radius: var(--r-pill);
+      padding: 4px 12px;
+      font-size: 11px; font-weight: 600;
+      color: var(--purple); letter-spacing: 0.04em;
+      text-transform: uppercase; margin-bottom: 10px;
+    }
+
+    .results-label {
+      font-size: 11.5px; font-weight: 500;
+      color: var(--gray-lt); letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+
+    .results-title {
+      font-family: var(--font-display);
+      font-size: 32px; font-weight: 700;
+      color: var(--ink); line-height: 1.15; letter-spacing: -0.02em;
+    }
+
+    .results-meta {
+      font-size: 13px; color: var(--gray-mid);
+      margin-top: 6px; font-weight: 400;
+    }
+
+    .results-meta strong { color: var(--ink); font-weight: 500; }
+
+    .results-challenge-note {
+      margin-top: 10px;
+      font-size: 12px; color: var(--purple);
+      font-weight: 500;
+    }
+
+    .new-search-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--r-card); padding: 10px 18px;
+      font-family: var(--font-body); font-size: 13px;
+      font-weight: 500; color: var(--gray-mid);
+      cursor: pointer; transition: all 0.15s;
+      white-space: nowrap; flex-shrink: 0;
+    }
+
+    .new-search-btn:hover { border-color: var(--purple); color: var(--purple); }
+
+    /* ─── Cards grid ─── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr 1fr;
+      gap: 18px; margin-bottom: 40px;
+    }
+
+    @media (max-width: 900px) { .cards-grid { grid-template-columns: 1fr; } }
+
+    /* ─── Section divider ─── */
+    .section-divider {
+      display: flex; align-items: center;
+      gap: 12px; margin-bottom: 28px;
+    }
+
+    .section-divider span {
+      font-size: 11.5px; font-weight: 500;
+      color: var(--gray-lt); letter-spacing: 0.06em;
+      text-transform: uppercase; white-space: nowrap;
+    }
+
+    .section-divider::before, .section-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ─── Signal Card ─── */
+    .signal-card {
+      background: linear-gradient(180deg, #17171f 0%, var(--ink) 38%);
+      border-radius: var(--r-lg); padding: 24px;
+      display: flex; flex-direction: column; gap: 14px;
+      border-left: 4px solid var(--amber);
+      position: relative; overflow: hidden;
+      opacity: 0; transform: translateY(18px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+
+    .signal-card.visible { opacity: 1; transform: translateY(0); }
+
+    .signal-card::before {
+      content: ''; position: absolute; top: 0; right: 0;
+      width: 120px; height: 120px;
+      background: radial-gradient(circle, rgba(91,76,219,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .signal-card.bd   { border-left-color: var(--purple); }
+    .signal-card.bd::before { background: radial-gradient(circle, rgba(91,76,219,0.18) 0%, transparent 70%); }
+    .signal-card.reg  { border-left-color: var(--blue); }
+    .signal-card.reg::before { background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%); }
+
+    .card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+    .card-pill {
+      font-size: 10.5px; font-weight: 500;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 4px 8px; border-radius: var(--r-pill); flex-shrink: 0;
+    }
+
+    .pill-amber  { background: rgba(201,139,62,0.18);  color: #f5b96b; }
+    .pill-purple { background: rgba(91,76,219,0.25);   color: var(--purple-lt); }
+    .pill-blue   { background: rgba(59,130,246,0.2);   color: #93c5fd; }
+
+    .card-timestamp { font-size: 10.5px; color: rgba(255,255,255,0.3); white-space: nowrap; }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 16px; font-weight: 700;
+      color: var(--white); line-height: 1.35; letter-spacing: -0.01em;
+    }
+
+    .card-body {
+      font-size: 13px; color: rgba(255,255,255,0.55);
+      line-height: 1.6; letter-spacing: -0.1px; flex: 1;
+    }
+
+    .card-sponsor { font-size: 11.5px; font-weight: 500; color: rgba(255,255,255,0.35); }
+
+    .card-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+
+    .card-tag {
+      font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,0.45);
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--r-pill); padding: 4px 8px;
+    }
+
+    .card-footer {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 8px;
+      padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .risk-badge {
+      font-size: 10.5px; font-weight: 500; padding: 4px 8px;
+      border-radius: var(--r-pill); letter-spacing: 0.04em; text-transform: uppercase;
+    }
+
+    .risk-high   { background: rgba(239,68,68,0.18);  color: #fca5a5; }
+    .risk-medium { background: rgba(201,139,62,0.2);   color: #f5b96b; }
+    .risk-low    { background: rgba(34,197,94,0.15);   color: #86efac; }
+
+    .card-action {
+      font-size: 11.5px; font-weight: 500; color: rgba(255,255,255,0.4);
+      cursor: pointer; transition: color 0.15s; display: flex; align-items: center; gap: 4px;
+    }
+
+    .card-action:hover { color: var(--white); }
+
+    .data-source {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10.5px; font-weight: 500; color: rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--r-pill); padding: 3px 10px 3px 8px;
+      align-self: flex-start;
+    }
+
+    .data-source::before {
+      content: ''; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--green); flex-shrink: 0; box-shadow: 0 0 4px var(--green);
+    }
+
+    /* ─── Role context banner ─── */
+    .role-context-banner {
+      background: rgba(91,76,219,0.06);
+      border: 1px solid rgba(91,76,219,0.14);
+      border-radius: var(--r-card);
+      padding: 14px 18px;
+      display: flex; align-items: flex-start; gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .rcb-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+
+    .rcb-text { flex: 1; }
+    .rcb-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+    .rcb-sub { font-size: 12px; color: var(--gray-mid); line-height: 1.5; }
+
+    /* ─── CTA Section ─── */
+    .cta-section {
+      background: var(--ink); border-radius: var(--r-lg);
+      padding: 60px 28px; text-align: center; position: relative; overflow: hidden;
+    }
+
+    .cta-section::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(91,76,219,0.2) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .cta-eyebrow {
+      font-size: 11.5px; font-weight: 500;
+      color: rgba(255,255,255,0.35); letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 20px;
+    }
+
+    .cta-title {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3.5vw, 42px);
+      font-weight: 700; font-style: italic; color: var(--white);
+      line-height: 1.1; letter-spacing: -0.025em;
+      margin-bottom: 16px;
+      max-width: 640px; margin-left: auto; margin-right: auto;
+    }
+
+    .cta-title em { font-style: normal; color: var(--purple-lt); }
+
+    .cta-sub {
+      font-size: 15px; color: rgba(255,255,255,0.48);
+      margin-bottom: 36px; line-height: 1.6;
+      max-width: 520px; margin-left: auto; margin-right: auto;
+    }
+
+    .cta-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--white); color: var(--ink);
+      padding: 15px 32px; border-radius: var(--r-pill);
+      font-family: var(--font-body); font-size: 15px; font-weight: 500;
+      letter-spacing: -0.13px; cursor: pointer; border: none;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+
+    .cta-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .cta-note { font-size: 11.5px; color: rgba(255,255,255,0.22); margin-top: 16px; }
+
+    .cta-role-line {
+      font-size: 12px; color: rgba(255,255,255,0.4);
+      margin-top: 20px; font-style: italic;
+    }
+
+    /* ── Pip — Results (fixed top-right) ── */
+    .pip-results-wrap {
+      position: fixed;
+      top: 72px;
+      right: 48px;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 12px;
+      z-index: 300;
+      opacity: 0;
+      transform: translateY(-16px);
+      transition: opacity 400ms ease-out, transform 400ms ease-out;
+      pointer-events: none;
+    }
+
+    .pip-results-wrap.pip-visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .pip-results-wrap.pip-dismissed {
+      opacity: 0;
+      transform: translateY(-16px) scale(0.9);
+      transition: all 280ms cubic-bezier(0.4, 0, 1, 1);
+    }
+
+    .pip-results-bubble {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1.55;
+      letter-spacing: -0.1px;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.11), 0 1px 4px rgba(0,0,0,0.06);
+      max-width: 260px;
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 52px;
+      transition: box-shadow 0.15s;
+    }
+
+    .pip-results-bubble:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.14); }
+
+    /* tail pointing right toward Dot */
+    .pip-results-bubble::after {
+      content: '';
+      position: absolute;
+      right: -8px;
+      bottom: 16px;
+      border: 8px solid transparent;
+      border-left-color: var(--white);
+      border-right-width: 0;
+    }
+
+    .pip-bubble-x {
+      font-size: 10px;
+      color: var(--gray-lt);
+      flex-shrink: 0;
+      margin-top: 1px;
+      font-weight: 600;
+      font-family: var(--font-body);
+    }
+
+    .pip-results-img {
+      height: 165px;
+      width: auto;
+      pointer-events: none;
+      display: block;
+    }
+
+    @media (max-width: 600px) {
+      .pip-results-wrap {
+        top: 60px;
+        right: 8px;
+        gap: 6px;
+      }
+      .pip-results-img {
+        height: 100px;
+      }
+      .pip-results-bubble {
+        font-size: 11px;
+        padding: 9px 10px;
+        max-width: 180px;
+        margin-bottom: 24px;
+      }
+    }
+
+    /* ── Mobile overrides ── */
+    @media (max-width: 600px) {
+      .nav {
+        padding: 0 16px;
+      }
+
+      .quiz-wrap {
+        padding: 32px 16px 60px;
+      }
+
+      .quiz-progress {
+        padding: 24px 16px 0;
+      }
+
+      .quiz-h2 {
+        font-size: clamp(22px, 6vw, 32px);
+      }
+
+      .quiz-sub {
+        margin-bottom: 28px;
+      }
+
+      .challenge-text {
+        font-size: 14px;
+      }
+
+      .ta-step-search {
+        flex-direction: column;
+      }
+
+      .loading-screen {
+        padding: 60px 24px;
+      }
+
+      /* Results */
+      .results-screen {
+        padding: 28px 16px 60px;
+      }
+
+      .results-header {
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .results-title {
+        font-size: clamp(22px, 6vw, 28px);
+      }
+
+      .new-search-btn {
+        align-self: flex-start;
+      }
+
+      .role-context-banner {
+        padding: 12px 14px;
+      }
+
+      .cta-section {
+        padding: 44px 20px;
+      }
+
+      .cta-btn {
+        padding: 14px 24px;
+        font-size: 14px;
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Nav ─── -->
+<nav class="nav">
+  <a href="index.html" class="nav-logo">
+    <img src="metly-logo.png" alt="Metly" />
+  </a>
+  <ul class="nav-links">
+    <li><a href="https://www.metly.ai/#features">Product</a></li>
+    <li><a href="https://www.metly.ai/#faq">FAQ</a></li>
+    <li><a href="https://2e3hj3.share-eu1.hsforms.com/2d7IqAfYBRGuds9OTaZVCwg">Newsletter</a></li>
+    <li><a href="https://app.apollo.io/#/meet/anna_torrents_metly/30-min" class="nav-cta">Book a demo</a></li>
+  </ul>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1 — Role Selection
+════════════════════════════════════════════ -->
+<div id="screen-role" class="screen active">
+  <div class="quiz-progress">
+    <div class="progress-step active" id="prog-1"></div>
+    <div class="progress-step" id="prog-2"></div>
+    <div class="progress-step" id="prog-3"></div>
+    <span class="progress-label">Step 1 of 3</span>
+  </div>
+
+  <div class="quiz-wrap">
+    <div class="quiz-step-label">Personalising your demo</div>
+    <h2 class="quiz-h2">Which best <em>describes you?</em></h2>
+    <p class="quiz-sub">We'll tailor the intelligence view to show you exactly what Metly surfaces for your role every day.</p>
+
+    <div class="role-grid" id="role-grid">
+      <!-- Injected by JS -->
+    </div>
+
+    <div class="quiz-nav">
+      <div></div>
+      <button class="btn-next" id="role-next-btn" disabled>
+        Continue
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 2 — Challenge
+════════════════════════════════════════════ -->
+<div id="screen-challenge" class="screen">
+  <div class="quiz-progress">
+    <div class="progress-step done"></div>
+    <div class="progress-step active"></div>
+    <div class="progress-step"></div>
+    <span class="progress-label">Step 2 of 3</span>
+  </div>
+
+  <div class="quiz-wrap">
+    <div class="quiz-step-label" id="challenge-role-label">For your role</div>
+    <h2 class="quiz-h2">What takes up most of <em>your time?</em></h2>
+    <p class="quiz-sub">Pick the challenge that slows you down most — we'll show you exactly how Metly handles it.</p>
+
+    <div class="challenge-list" id="challenge-list">
+      <!-- Injected by JS -->
+    </div>
+
+    <div class="quiz-nav">
+      <button class="btn-back" onclick="show('screen-role')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back
+      </button>
+      <button class="btn-next" id="challenge-next-btn" disabled>
+        Continue
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 3 — TA Selection
+════════════════════════════════════════════ -->
+<div id="screen-ta" class="screen">
+  <div class="quiz-progress">
+    <div class="progress-step done"></div>
+    <div class="progress-step done"></div>
+    <div class="progress-step active"></div>
+    <span class="progress-label">Step 3 of 3</span>
+  </div>
+
+  <div class="quiz-wrap" style="max-width:680px">
+    <div class="quiz-step-label" id="ta-role-label">Your intelligence view</div>
+    <h2 class="quiz-h2">Which <em>therapeutic area</em> are you focused on?</h2>
+    <p class="quiz-sub">Type your TA or pick one below — we'll pull live signals from ClinicalTrials.gov, FDA, and EMA.</p>
+
+    <div class="ta-step-search">
+      <input
+        type="text" id="ta-input" class="ta-step-input"
+        placeholder="e.g. HER2+ breast cancer, CNS depression, heart failure…"
+        autocomplete="off"
+      />
+    </div>
+
+    <div class="ta-chips" id="ta-chips">
+      <span class="ta-chip" data-ta="HER2+ breast cancer">HER2+ Breast Cancer</span>
+      <span class="ta-chip" data-ta="CNS depression">CNS Depression</span>
+      <span class="ta-chip" data-ta="heart failure">Heart Failure</span>
+      <span class="ta-chip" data-ta="KRAS non-small cell lung cancer">KRAS NSCLC</span>
+      <span class="ta-chip" data-ta="GLP-1 obesity diabetes">GLP-1 / Obesity</span>
+      <span class="ta-chip" data-ta="multiple myeloma">Multiple Myeloma</span>
+    </div>
+
+    <div class="quiz-nav">
+      <button class="btn-back" onclick="show('screen-challenge')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back
+      </button>
+      <button class="btn-next" id="ta-next-btn" disabled>
+        Generate my snapshot
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 4 — Loading
+════════════════════════════════════════════ -->
+<div id="screen-loading" class="screen">
+  <div class="loading-screen">
+    <div class="loading-bars">
+      <div class="loading-bar"></div>
+      <div class="loading-bar"></div>
+      <div class="loading-bar"></div>
+      <div class="loading-bar"></div>
+      <div class="loading-bar"></div>
+    </div>
+    <div class="loading-role-badge" id="loading-role-badge">—</div>
+    <div class="loading-title">Scanning <em id="loading-ta-name">your space</em></div>
+    <div class="loading-step" id="loading-step-text">Connecting to ClinicalTrials.gov…</div>
+    <div class="loading-progress">
+      <div class="loading-progress-bar" id="loading-bar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 5 — Results
+════════════════════════════════════════════ -->
+<div id="screen-results" class="screen">
+  <div class="results-screen">
+
+    <div class="results-header">
+      <div>
+        <div class="results-role-tag" id="results-role-tag">—</div>
+        <div class="results-label">Intelligence Snapshot</div>
+        <div class="results-title" id="results-ta-title">—</div>
+        <div class="results-meta" id="results-meta">—</div>
+        <div class="results-challenge-note" id="results-challenge-note"></div>
+      </div>
+      <button class="new-search-btn" id="new-search-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.85"/></svg>
+        New search
+      </button>
+    </div>
+
+    <div class="role-context-banner" id="role-context-banner">
+      <div class="rcb-icon" id="rcb-icon"></div>
+      <div class="rcb-text">
+        <div class="rcb-title" id="rcb-title">—</div>
+        <div class="rcb-sub" id="rcb-sub">—</div>
+      </div>
+    </div>
+
+    <div class="section-divider"><span id="divider-label">3 signals detected</span></div>
+
+    <div class="cards-grid" id="cards-grid"></div>
+
+    <!-- CTA -->
+    <div class="cta-section">
+      <div class="cta-eyebrow">This is less than 1% of what Metly monitors</div>
+      <div class="cta-title" id="cta-title">Your portfolio deserves intelligence that <em>never sleeps.</em></div>
+      <p class="cta-sub" id="cta-sub">Metly tracks every signal across your entire therapeutic area, every day — and writes it directly into your team's workflows.</p>
+      <a href="https://app.apollo.io/#/meet/anna_torrents_metly/30-min" target="_blank">
+        <button class="cta-btn">
+          Book a personalised demo
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </a>
+      <div class="cta-note">30 minutes · No commitment · Demo built around your portfolio</div>
+      <div class="cta-role-line" id="cta-role-line"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Pip — fixed results mascot -->
+<div class="pip-results-wrap" id="pip-results">
+  <div class="pip-results-bubble" id="pip-results-bubble" onclick="dismissPip()">
+    <span id="pip-results-text"></span>
+    <span class="pip-bubble-x">✕</span>
+  </div>
+  <img src="Pip.png" alt="Pip" class="pip-results-img" />
+</div>
+
+<!-- ─────────────────────────────────────────
+     JavaScript
+───────────────────────────────────────── -->
+<script>
+
+// ══════════════════════════════════════
+// ROLE DATA
+// ══════════════════════════════════════
+const ROLES = [
+  {
+    id: 'bd',
+    icon: '🤝',
+    iconBg: 'rgba(201,139,62,0.15)',
+    title: 'BD Director',
+    label: 'BD Director / VP Business Development',
+    desc: 'VP Business Development · Licensing Manager · Partnership Lead',
+    accent: '#c98b3e',
+    challenges: [
+      'Finding the right assets before competitors close the window',
+      'Tracking BD activity and partnership signals across the market',
+      'Building business cases faster with less manual research'
+    ],
+    loadingSteps: [
+      'Scanning BD activity and partnership signals…',
+      'Identifying white-space assets in your TA…',
+      'Cross-referencing regulatory filings for deal windows…',
+      'Ranking opportunities by fit and BD readiness…',
+      'Compiling your BD intelligence snapshot…'
+    ],
+    contextTitle: "Here's what Metly surfaces for BD teams every morning",
+    contextSub: 'Live asset opportunities, partnership signals, and deal window alerts — ranked by fit, ready to act on.',
+    ctaHeadline: "Your next deal shouldn't depend on luck.",
+    ctaSub: 'Metly tracks every asset, partnership signal, and deal window in your space — so you find opportunities before competitors do.',
+    ctaRoleLine: 'Tailored for BD & Licensing teams',
+    pipQuote: 'That Phase III window closes in 18 months. Your move.',
+    cardFraming: {
+      competitive: 'Competitive signal threatening your pipeline positioning',
+      bd:          'Partnership opportunity — contact-ready asset brief',
+      regulatory:  'Regulatory signal opening a BD window'
+    }
+  },
+  {
+    id: 'ci',
+    icon: '🎯',
+    iconBg: 'rgba(91,76,219,0.15)',
+    title: 'CI Lead',
+    label: 'CI Lead / Market Intelligence Manager',
+    desc: 'Competitive Intelligence Manager · Strategy Analyst · CI Director',
+    accent: '#5b4cdb',
+    challenges: [
+      'Keeping up with competitor pipeline moves in real time',
+      'Building and maintaining accurate competitive landscapes',
+      'Delivering timely, contextual alerts to leadership'
+    ],
+    loadingSteps: [
+      'Scanning competitor pipeline activity…',
+      'Pulling regulatory filings and approval signals…',
+      'Cross-referencing clinical trial updates…',
+      'Assessing portfolio impact for each signal…',
+      'Compiling your competitive intelligence snapshot…'
+    ],
+    contextTitle: "Here's what Metly surfaces for CI teams every morning",
+    contextSub: 'Competitor moves, regulatory signals, and portfolio impact assessments — delivered before your team asks.',
+    ctaHeadline: 'Stop building landscapes. Start acting on them.',
+    ctaSub: 'Metly continuously monitors your competitive space and writes the context directly into your deliverables — so nothing slips through.',
+    ctaRoleLine: 'Tailored for Competitive Intelligence teams',
+    pipQuote: '3 competitors moved this week. Want the full picture?',
+    cardFraming: {
+      competitive: 'High-priority competitive alert — portfolio impact detected',
+      bd:          'Market white-space intelligence — before competitors move',
+      regulatory:  'Regulatory signal — landscape shift incoming'
+    }
+  },
+  {
+    id: 'strategy',
+    icon: '♟',
+    iconBg: 'rgba(59,130,246,0.15)',
+    title: 'VP Strategy',
+    label: 'VP Strategy / Portfolio Director',
+    desc: 'Portfolio Director · Head of Strategy · Commercial Strategy Lead',
+    accent: '#3b82f6',
+    challenges: [
+      'Evaluating portfolio gaps and white spaces at speed',
+      'Prioritising pipeline investment decisions with full market context',
+      'Getting complete intelligence before board reviews'
+    ],
+    loadingSteps: [
+      'Evaluating portfolio gaps and white spaces…',
+      'Scanning pipeline signals for investment implications…',
+      'Assessing competitive positioning across your TA…',
+      'Identifying strategic opportunities and risks…',
+      'Compiling your portfolio strategy snapshot…'
+    ],
+    contextTitle: "Here's what Metly surfaces for strategy teams every morning",
+    contextSub: 'Portfolio gap analysis, competitive positioning, and strategic risk signals — ready for your next leadership review.',
+    ctaHeadline: 'Every portfolio decision deserves full market context.',
+    ctaSub: 'Metly tracks every signal across your therapeutic area and surfaces portfolio implications before your next strategy review.',
+    ctaRoleLine: 'Tailored for Portfolio Strategy leaders',
+    pipQuote: 'Your portfolio has 2 unmonitored blind spots right now.',
+    cardFraming: {
+      competitive: 'Portfolio risk — competitive landscape shifting',
+      bd:          'Strategic opportunity — portfolio gap identified',
+      regulatory:  'Regulatory catalyst — market expansion signal'
+    }
+  },
+  {
+    id: 'medical',
+    icon: '🩺',
+    iconBg: 'rgba(34,197,94,0.15)',
+    title: 'Medical Affairs Director',
+    label: 'Medical Affairs Director / MSL Lead',
+    desc: 'Medical Science Liaison · Medical Affairs Manager · MSL Director',
+    accent: '#22c55e',
+    challenges: [
+      'Tracking clinical trial activity and evidence shifts across your TA',
+      'Monitoring regulatory changes that affect label strategy',
+      'Staying ahead of KOL activity and publication signals'
+    ],
+    loadingSteps: [
+      'Scanning clinical trial registrations and updates…',
+      'Pulling regulatory submission signals…',
+      'Tracking publication and KOL activity…',
+      'Assessing evidence landscape shifts…',
+      'Compiling your medical affairs intelligence snapshot…'
+    ],
+    contextTitle: "Here's what Metly surfaces for Medical Affairs every morning",
+    contextSub: 'Clinical trial activity, regulatory label signals, and evidence landscape shifts — surfaced before they affect your strategy.',
+    ctaHeadline: 'The evidence landscape moves fast. Metly moves faster.',
+    ctaSub: 'Metly tracks every trial, regulatory filing, and publication signal in your therapeutic area — so your medical strategy is always ahead.',
+    ctaRoleLine: 'Tailored for Medical Affairs teams',
+    pipQuote: 'Two KOLs shifted position on this mechanism last month.',
+    cardFraming: {
+      competitive: 'Clinical signal — evidence landscape shifting',
+      bd:          'Scientific opportunity — new data package available',
+      regulatory:  'Regulatory milestone — label strategy update required'
+    }
+  },
+  {
+    id: 'commercial',
+    icon: '📈',
+    iconBg: 'rgba(167,139,250,0.15)',
+    title: 'Brand Director',
+    label: 'Brand Director / VP Commercial',
+    desc: 'Senior Brand Manager · Commercial Excellence Manager · VP Commercial Strategy',
+    accent: '#a78bfa',
+    challenges: [
+      'Understanding competitive market dynamics in real time',
+      'Tracking competitor launches and market share signals',
+      'Preparing commercial strategy in a fast-moving TA'
+    ],
+    loadingSteps: [
+      'Scanning competitor commercial activity…',
+      'Tracking launch signals and approval timelines…',
+      'Assessing market positioning implications…',
+      'Pulling pricing and access intelligence signals…',
+      'Compiling your commercial intelligence snapshot…'
+    ],
+    contextTitle: "Here's what Metly surfaces for commercial teams every morning",
+    contextSub: 'Competitor launch signals, market dynamics, and commercial positioning intelligence — ready for your brand planning.',
+    ctaHeadline: 'Commercial strategy runs on intelligence. Make yours real-time.',
+    ctaSub: 'Metly tracks every competitor move, launch signal, and market shift in your therapeutic area — so your brand is always positioned to win.',
+    ctaRoleLine: 'Tailored for Commercial & Brand teams',
+    pipQuote: "Competitor A's campaign just changed. Here's what it means.",
+    cardFraming: {
+      competitive: 'Competitive threat — market share risk detected',
+      bd:          'Market opportunity — unmet need and white space confirmed',
+      regulatory:  'Launch signal — competitive response window open'
+    }
+  },
+  {
+    id: 'marketaccess',
+    icon: '🏛',
+    iconBg: 'rgba(245,185,107,0.15)',
+    title: 'Market Access Director',
+    label: 'Market Access Director / HEOR Lead',
+    desc: 'HEOR Director · Payer Strategy Manager · Access & Reimbursement Lead',
+    accent: '#f5b96b',
+    challenges: [
+      'Tracking regulatory and HTA submission milestones',
+      'Monitoring competitor pricing and reimbursement decisions',
+      'Building payer evidence packages faster'
+    ],
+    loadingSteps: [
+      'Scanning HTA submission and approval signals…',
+      'Pulling regulatory filing timelines…',
+      'Tracking payer and reimbursement intelligence…',
+      'Assessing HEOR landscape and competitor positioning…',
+      'Compiling your market access intelligence snapshot…'
+    ],
+    contextTitle: "Here's what Metly surfaces for Market Access every morning",
+    contextSub: 'HTA milestones, competitor reimbursement signals, and access intelligence — ready before your next submission.',
+    ctaHeadline: 'Payer decisions happen fast. Be ready before they do.',
+    ctaSub: 'Metly tracks every HTA signal, regulatory filing, and reimbursement move in your therapeutic area — so your access strategy is always informed.',
+    ctaRoleLine: 'Tailored for Market Access teams',
+    pipQuote: 'Payer pushback is rising in EU5. Metly caught it first.',
+    cardFraming: {
+      competitive: 'Competitive signal — access landscape implications',
+      bd:          'HEOR opportunity — differentiation gap identified',
+      regulatory:  'HTA signal — payer positioning window opening'
+    }
+  }
+];
+
+// ══════════════════════════════════════
+// TA DATA
+// ══════════════════════════════════════
+const TA_DATA = {
+  'her2': {
+    label: 'HER2+ Breast Cancer',
+    competitive: {
+      pill: 'COMPETITIVE SIGNAL · HER2+ BREAST CANCER',
+      timestamp: '6 days ago',
+      title: 'Phase III initiated — AstraZeneca advancing T-DXd combination in HER2-low MBC',
+      body: 'AstraZeneca has enrolled first patients in DESTINY-Breast09, evaluating T-DXd + pertuzumab in first-line HER2+ MBC. The trial\'s accelerated timeline and novel combination approach signals a potential label expansion within 18–24 months that would directly reshape treatment sequencing across your portfolio.',
+      source: 'ClinicalTrials.gov · NCT05113251',
+      risk: 'high', riskLabel: 'High risk', action: 'View full analysis →'
+    },
+    bd: {
+      pill: 'BD OPPORTUNITY',
+      timestamp: '12 days ago',
+      title: 'White-space detected — subcutaneous HER2-targeted ADC with reduced cardiotoxicity profile',
+      body: 'Current ADC landscape shows limited subcutaneous formulation options despite strong patient preference data. Three Phase I assets from emerging biotechs show improved therapeutic index versus T-DXd, representing a BD window before larger players consolidate.',
+      source: 'ClinicalTrials.gov · NCT05448872',
+      tags: ['Subcutaneous', 'ADC', 'Reduced cardiotox', 'Phase I'], action: 'Explore opportunity →'
+    },
+    regulatory: {
+      pill: 'REGULATORY ALERT · FDA',
+      timestamp: '3 days ago',
+      title: 'FDA grants Breakthrough Therapy designation to Daiichi\'s patritumab deruxtecan in HER2-low',
+      body: 'The BTD widens the HER2-addressable population by ~35% and accelerates the regulatory review path. EMA alignment expected within Q3 2025, creating an urgent competitive response window for portfolio teams tracking second-line positioning.',
+      source: 'openFDA · BLA 761310', action: 'Impact on your portfolio →'
+    }
+  },
+  'cns': {
+    label: 'CNS Depression',
+    competitive: {
+      pill: 'COMPETITIVE SIGNAL · CNS DEPRESSION',
+      timestamp: '4 days ago',
+      title: 'Phase III initiation detected — Eli Lilly advancing LY3154207 dopamine modulator in TRD',
+      body: 'Eli Lilly has initiated PARADIGM-TRD, a 780-patient Phase III evaluating LY3154207, a novel D1/D5 positive allosteric modulator. Mechanism directly overlaps with assets targeting treatment-resistant depression. Primary endpoint readout expected Q4 2026.',
+      source: 'ClinicalTrials.gov · NCT05793580',
+      risk: 'medium', riskLabel: 'Medium risk', action: 'View full analysis →'
+    },
+    bd: {
+      pill: 'BD OPPORTUNITY',
+      timestamp: '9 days ago',
+      title: 'BD window open — GABA-B modulator Phase I showing rapid onset profile vs. SSRIs',
+      body: 'A Phase I asset from Sage Therapeutics spin-out demonstrates 72-hour onset of action versus 4–6 weeks for standard-of-care SSRIs. Competitive data packages and a clean IP landscape make this an attractive licensing target ahead of larger Phase II enrollment.',
+      source: 'ClinicalTrials.gov · NCT05661474',
+      tags: ['GABA-B', 'Rapid onset', 'Phase I', 'TRD'], action: 'Explore opportunity →'
+    },
+    regulatory: {
+      pill: 'REGULATORY ALERT · FDA / EMA',
+      timestamp: '8 days ago',
+      title: 'FDA approves Johnson & Johnson\'s aticaprant as adjunctive therapy in MDD',
+      body: 'Approval of aticaprant (kappa opioid antagonist) expands the MDD treatment paradigm beyond monoamine mechanisms. EMA submission filed; market entry expected H1 2026. Competitive positioning review recommended for all assets in the depression pipeline.',
+      source: 'openFDA · NDA 216824', action: 'Impact on your portfolio →'
+    }
+  },
+  'heart': {
+    label: 'Heart Failure',
+    competitive: {
+      pill: 'COMPETITIVE SIGNAL · HEART FAILURE',
+      timestamp: '2 days ago',
+      title: 'Phase III enrollment complete — Novartis sacubitril/valsartan paediatric HFrEF study',
+      body: 'Novartis has completed enrollment in PANORAMA-HF2, studying sacubitril/valsartan in paediatric heart failure with reduced ejection fraction. Label extension would open a significant underserved market currently relying on off-label ACEI/ARB use.',
+      source: 'ClinicalTrials.gov · NCT04205942',
+      risk: 'medium', riskLabel: 'Medium risk', action: 'View full analysis →'
+    },
+    bd: {
+      pill: 'BD OPPORTUNITY',
+      timestamp: '14 days ago',
+      title: 'Licensing target — oral soluble guanylate cyclase stimulator showing superiority in HFpEF',
+      body: 'A Phase II sGC stimulator from Cyclerion Therapeutics demonstrates statistically significant improvement in exercise capacity in HFpEF patients — an indication with no approved disease-modifying therapies. Clean IP through 2034. Early BD discussions expected imminently.',
+      source: 'ClinicalTrials.gov · NCT05170789',
+      tags: ['sGC stimulator', 'HFpEF', 'Phase II', 'Oral'], action: 'Explore opportunity →'
+    },
+    regulatory: {
+      pill: 'REGULATORY ALERT · EMA',
+      timestamp: '5 days ago',
+      title: 'EMA CHMP positive opinion for Bayer\'s vericiguat label expansion in NYHA Class II HF',
+      body: 'CHMP recommends approval of vericiguat in lower-acuity heart failure patients, expanding addressable population by an estimated 2.1M patients across EU5. Formal Commission decision expected within 67 days. Competitive response window now open.',
+      source: 'EMA/CHMP/2025/0441', action: 'Impact on your portfolio →'
+    }
+  },
+  'kras': {
+    label: 'KRAS NSCLC',
+    competitive: {
+      pill: 'COMPETITIVE SIGNAL · KRAS G12C NSCLC',
+      timestamp: '1 day ago',
+      title: 'Phase III initiated — Mirati advancing adagrasib + pembrolizumab in first-line KRAS G12C NSCLC',
+      body: 'Mirati has dosed first patients in KRYSTAL-7, evaluating adagrasib + pembrolizumab versus chemo-IO in treatment-naïve KRAS G12C NSCLC. If successful, this combination would challenge sotorasib\'s second-line positioning and redefine the KRAS treatment paradigm.',
+      source: 'ClinicalTrials.gov · NCT04613596',
+      risk: 'high', riskLabel: 'High risk', action: 'View full analysis →'
+    },
+    bd: {
+      pill: 'BD OPPORTUNITY',
+      timestamp: '7 days ago',
+      title: 'KRAS G12D inhibitor Phase I — pan-KRAS coverage opportunity ahead of Amgen\'s next move',
+      body: 'Revolution Medicines\' RMC-6236 Phase I data shows encouraging response rates in KRAS G12D NSCLC — the largest unaddressed KRAS mutation subtype. No approved G12D inhibitor exists; BD window is narrow as Amgen and Roche accelerate their own programmes.',
+      source: 'ClinicalTrials.gov · NCT05379985',
+      tags: ['KRAS G12D', 'Pan-KRAS', 'Phase I', 'First-in-class'], action: 'Explore opportunity →'
+    },
+    regulatory: {
+      pill: 'REGULATORY ALERT · FDA',
+      timestamp: '11 days ago',
+      title: 'FDA approves sotorasib + panitumumab combination in KRAS G12C colorectal cancer',
+      body: 'Approval expands KRAS-targeted therapy beyond NSCLC into CRC, demonstrating tolerability of KRAS inhibitor combinations. Precedent supports accelerated regulatory pathway for combination studies in NSCLC. Competitive landscape update recommended.',
+      source: 'openFDA · NDA 214665-S003', action: 'Impact on your portfolio →'
+    }
+  },
+  'glp': {
+    label: 'GLP-1 / Obesity',
+    competitive: {
+      pill: 'COMPETITIVE SIGNAL · GLP-1 / OBESITY',
+      timestamp: 'Today',
+      title: 'Phase III complete — Eli Lilly orforglipron oral GLP-1 non-inferior to semaglutide',
+      body: 'Lilly\'s ATTAIN-1 Phase III data shows orforglipron achieves 14.7% weight loss at 36 weeks, non-inferior to injectable semaglutide. An approved oral GLP-1 would fundamentally disrupt the injectable market and shift competitive pressure to tolerability and adherence profiles.',
+      source: 'ClinicalTrials.gov · NCT05394519',
+      risk: 'high', riskLabel: 'High risk', action: 'View full analysis →'
+    },
+    bd: {
+      pill: 'BD OPPORTUNITY',
+      timestamp: '5 days ago',
+      title: 'GLP-1 / GIP dual agonist Phase II — superior lean mass preservation vs. tirzepatide',
+      body: 'Zealand Pharma\'s ZP8396 Phase II interim data shows comparable weight loss to tirzepatide with significantly better lean mass preservation — a key differentiator as the obesity market matures and payers begin scrutinising body composition endpoints.',
+      source: 'ClinicalTrials.gov · NCT05519605',
+      tags: ['GLP-1/GIP', 'Oral', 'Lean mass', 'Phase II'], action: 'Explore opportunity →'
+    },
+    regulatory: {
+      pill: 'REGULATORY ALERT · FDA',
+      timestamp: '3 days ago',
+      title: 'FDA grants Fast Track designation to Structure Therapeutics\' GSBR-1290 oral GLP-1',
+      body: 'Fast Track status accelerates regulatory interaction for GSBR-1290, a small-molecule GLP-1 receptor agonist with QD dosing and no food effect. Novo Nordisk and Lilly are tracking this asset closely. BD interest has been reported from two undisclosed large pharma.',
+      source: 'FDA Press Release · 2025-05-28', action: 'Impact on your portfolio →'
+    }
+  },
+  'myeloma': {
+    label: 'Multiple Myeloma',
+    competitive: {
+      pill: 'COMPETITIVE SIGNAL · MULTIPLE MYELOMA',
+      timestamp: '3 days ago',
+      title: 'Phase III initiated — J&J teclistamab + daratumumab combination in transplant-eligible NDMM',
+      body: 'Johnson & Johnson has initiated MAJESTIC-PLUS, evaluating teclistamab (BCMA×CD3 bispecific) + daratumumab + VRd in newly diagnosed transplant-eligible myeloma. Positive data could challenge autologous stem cell transplant as standard of care.',
+      source: 'ClinicalTrials.gov · NCT05572841',
+      risk: 'high', riskLabel: 'High risk', action: 'View full analysis →'
+    },
+    bd: {
+      pill: 'BD OPPORTUNITY',
+      timestamp: '10 days ago',
+      title: 'GPRC5D-targeted CAR-T Phase I — clean mechanism, no prior pharma partnership',
+      body: 'Poseida Therapeutics\' P-BCMA-ALLO1 allogeneic CAR-T shows deep responses in heavily pre-treated myeloma with a differentiated GPRC5D targeting approach. Currently unlicensed outside of the US; EU/APAC rights available. Phase II planning underway.',
+      source: 'ClinicalTrials.gov · NCT04960579',
+      tags: ['GPRC5D', 'Allogeneic CAR-T', 'Phase I', 'BD available'], action: 'Explore opportunity →'
+    },
+    regulatory: {
+      pill: 'REGULATORY ALERT · FDA / EMA',
+      timestamp: '7 days ago',
+      title: 'FDA approves talquetamab (GPRC5D×CD3) in relapsed/refractory multiple myeloma',
+      body: 'Approval of talquetamab expands the bispecific antibody landscape in myeloma to a second target class. Combined with teclistamab, J&J now holds dual bispecific dominance. Competitive sequencing analysis and portfolio impact review recommended urgently.',
+      source: 'openFDA · BLA 761314', action: 'Impact on your portfolio →'
+    }
+  }
+};
+
+function buildGenericData(ta) {
+  const name = ta.replace(/\b\w/g, c => c.toUpperCase());
+  return {
+    label: name,
+    competitive: {
+      pill: `COMPETITIVE SIGNAL · ${ta.toUpperCase()}`,
+      timestamp: '5 days ago',
+      title: `Phase III activity detected — major sponsor advancing novel mechanism in ${name}`,
+      body: `Active Phase III development with recently updated primary endpoint data detected in ${name}. Sponsor has accelerated enrollment timeline by 3 months, suggesting confidence in interim data. Monitor for potential label expansion implications.`,
+      source: 'ClinicalTrials.gov · Signal detected',
+      risk: 'medium', riskLabel: 'Medium risk', action: 'View full analysis →'
+    },
+    bd: {
+      pill: 'BD OPPORTUNITY',
+      timestamp: '10 days ago',
+      title: `White-space detected — early-stage asset in ${name} with differentiated mechanism`,
+      body: `Phase I/II asset in ${name} demonstrating clinical proof-of-concept with a mechanism not yet validated at Phase III. Partnership interest from two undisclosed large pharma signals BD window. IP runway through 2036.`,
+      source: 'ClinicalTrials.gov · Signal detected',
+      tags: ['Novel mechanism', 'Phase I/II', 'IP runway 2036', 'BD window'], action: 'Explore opportunity →'
+    },
+    regulatory: {
+      pill: 'REGULATORY ALERT · FDA / EMA',
+      timestamp: '2 weeks ago',
+      title: `Regulatory filing detected — NDA submission relevant to ${name} competitive landscape`,
+      body: `Recent regulatory submission in ${name} signals competitive intent from a top-10 pharma. Label scope broader than anticipated based on trial design — portfolio impact assessment recommended for assets in adjacent indications.`,
+      source: 'openFDA · Filing detected', action: 'Impact on your portfolio →'
+    }
+  };
+}
+
+function matchTA(query) {
+  const q = query.toLowerCase();
+  if (q.includes('her2') || q.includes('breast')) return TA_DATA.her2;
+  if (q.includes('cns') || q.includes('depress') || q.includes('mdd') || q.includes('trd')) return TA_DATA.cns;
+  if (q.includes('heart') || q.includes('cardiac') || q.includes('hf') || q.includes('failure')) return TA_DATA.heart;
+  if (q.includes('kras') || q.includes('nsclc') || q.includes('lung')) return TA_DATA.kras;
+  if (q.includes('glp') || q.includes('obes') || q.includes('diabet') || q.includes('semaglutide')) return TA_DATA.glp;
+  if (q.includes('myeloma') || q.includes('bcma') || q.includes('multiple')) return TA_DATA.myeloma;
+  return null;
+}
+
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let state = { roleId: null, challengeIdx: null, ta: '' };
+
+// ══════════════════════════════════════
+// SCREEN MANAGEMENT
+// ══════════════════════════════════════
+function show(id, scrollTarget) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (scrollTarget) {
+    requestAnimationFrame(() => {
+      const el = document.getElementById(scrollTarget);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+// ══════════════════════════════════════
+// RENDER ROLES
+// ══════════════════════════════════════
+function renderRoles() {
+  const grid = document.getElementById('role-grid');
+  grid.innerHTML = ROLES.map(r => `
+    <div class="role-card" data-role="${r.id}" onclick="selectRole('${r.id}')">
+      <div class="role-card-icon" style="background:${r.iconBg}">${r.icon}</div>
+      <div>
+        <div class="role-card-title">${r.title}</div>
+        <div class="role-card-desc">${r.desc}</div>
+      </div>
+      <div class="role-card-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectRole(id) {
+  state.roleId = id;
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`.role-card[data-role="${id}"]`).classList.add('selected');
+  document.getElementById('role-next-btn').disabled = false;
+}
+
+// ══════════════════════════════════════
+// RENDER CHALLENGES
+// ══════════════════════════════════════
+function renderChallenges() {
+  const role = ROLES.find(r => r.id === state.roleId);
+  document.getElementById('challenge-role-label').textContent = `For ${role.title} teams`;
+
+  const list = document.getElementById('challenge-list');
+  list.innerHTML = role.challenges.map((c, i) => `
+    <div class="challenge-card" data-idx="${i}" onclick="selectChallenge(${i})">
+      <div class="challenge-radio"></div>
+      <div class="challenge-text">${c}</div>
+    </div>
+  `).join('');
+
+  state.challengeIdx = null;
+  document.getElementById('challenge-next-btn').disabled = true;
+}
+
+function selectChallenge(idx) {
+  state.challengeIdx = idx;
+  document.querySelectorAll('.challenge-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`.challenge-card[data-idx="${idx}"]`).classList.add('selected');
+  document.getElementById('challenge-next-btn').disabled = false;
+}
+
+// ══════════════════════════════════════
+// TA STEP
+// ══════════════════════════════════════
+function setupTAStep() {
+  const role = ROLES.find(r => r.id === state.roleId);
+  document.getElementById('ta-role-label').textContent = `Your ${role.title} intelligence view`;
+}
+
+const taInput = document.getElementById('ta-input');
+const taNextBtn = document.getElementById('ta-next-btn');
+
+taInput.addEventListener('input', () => {
+  state.ta = taInput.value.trim();
+  taNextBtn.disabled = state.ta.length < 2;
+  // deselect chips if typing
+  if (state.ta) {
+    document.querySelectorAll('.ta-chip').forEach(c => c.classList.remove('selected'));
+  }
+});
+
+taInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !taNextBtn.disabled) startSearch();
+});
+
+document.querySelectorAll('.ta-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.ta-chip').forEach(c => c.classList.remove('selected', 'clicking'));
+    chip.classList.add('clicking');
+    setTimeout(() => {
+      chip.classList.remove('clicking');
+      chip.classList.add('selected');
+    }, 150);
+    taInput.value = chip.dataset.ta;
+    state.ta = chip.dataset.ta;
+    taNextBtn.disabled = false;
+  });
+});
+
+// ══════════════════════════════════════
+// NAVIGATION BUTTONS
+// ══════════════════════════════════════
+document.getElementById('role-next-btn').addEventListener('click', () => {
+  renderChallenges();
+  show('screen-challenge');
+});
+
+document.getElementById('challenge-next-btn').addEventListener('click', () => {
+  setupTAStep();
+  show('screen-ta');
+});
+
+taNextBtn.addEventListener('click', startSearch);
+
+document.getElementById('new-search-btn').addEventListener('click', () => {
+  state = { roleId: null, challengeIdx: null, ta: '' };
+  taInput.value = '';
+  taNextBtn.disabled = true;
+  renderRoles();
+  // hide Pip immediately
+  const pip = document.getElementById('pip-results');
+  pip.classList.remove('pip-visible', 'pip-dismissed');
+  show('screen-role');
+});
+
+// ══════════════════════════════════════
+// LOADING
+// ══════════════════════════════════════
+function animateLoading(role, ta, onComplete) {
+  const steps = role.loadingSteps;
+  document.getElementById('loading-ta-name').textContent = ta;
+  document.getElementById('loading-role-badge').innerHTML =
+    `<span style="font-size:14px">${role.icon}</span> ${role.title} view`;
+
+  const stepEl = document.getElementById('loading-step-text');
+  const barEl  = document.getElementById('loading-bar');
+  let step = 0;
+
+  const interval = setInterval(() => {
+    if (step < steps.length) {
+      stepEl.textContent = steps[step];
+      barEl.style.width = `${Math.round(((step + 1) / steps.length) * 100)}%`;
+      step++;
+    } else {
+      clearInterval(interval);
+      onComplete();
+    }
+  }, 520);
+}
+
+// ══════════════════════════════════════
+// CARD RENDERER
+// ══════════════════════════════════════
+function renderCards(data, role) {
+  const c = data.competitive;
+  const b = data.bd;
+  const r = data.regulatory;
+  const framing = role.cardFraming;
+
+  const compCard = `
+    <div class="signal-card">
+      <div class="card-header">
+        <span class="card-pill pill-amber">${c.pill}</span>
+        <span class="card-timestamp">${c.timestamp}</span>
+      </div>
+      <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:-4px">${framing.competitive}</div>
+      <div class="card-title">${c.title}</div>
+      <div class="card-body">${c.body}</div>
+      <div class="data-source">${c.source}</div>
+      <div class="card-footer">
+        <span class="risk-badge risk-${c.risk}">${c.riskLabel}</span>
+        <span class="card-action">${c.action}</span>
+      </div>
+    </div>`;
+
+  const bdCard = `
+    <div class="signal-card bd">
+      <div class="card-header">
+        <span class="card-pill pill-purple">${b.pill}</span>
+        <span class="card-timestamp">${b.timestamp}</span>
+      </div>
+      <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:-4px">${framing.bd}</div>
+      <div class="card-title">${b.title}</div>
+      <div class="card-body">${b.body}</div>
+      <div class="data-source">${b.source}</div>
+      <div class="card-tags">${b.tags.map(t => `<span class="card-tag">${t}</span>`).join('')}</div>
+      <div class="card-footer">
+        <span></span>
+        <span class="card-action">${b.action}</span>
+      </div>
+    </div>`;
+
+  const regCard = `
+    <div class="signal-card reg">
+      <div class="card-header">
+        <span class="card-pill pill-blue">${r.pill}</span>
+        <span class="card-timestamp">${r.timestamp}</span>
+      </div>
+      <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:-4px">${framing.regulatory}</div>
+      <div class="card-title">${r.title}</div>
+      <div class="card-body">${r.body}</div>
+      <div class="data-source">${r.source}</div>
+      <div class="card-footer">
+        <span></span>
+        <span class="card-action">${r.action}</span>
+      </div>
+    </div>`;
+
+  return compCard + bdCard + regCard;
+}
+
+// ══════════════════════════════════════
+// MAIN SEARCH FLOW
+// ══════════════════════════════════════
+function startSearch() {
+  const ta = state.ta;
+  if (!ta || !state.roleId) return;
+
+  const role = ROLES.find(r => r.id === state.roleId);
+  show('screen-loading');
+
+  animateLoading(role, ta, () => {
+    const data = matchTA(ta) || buildGenericData(ta);
+    const challenge = role.challenges[state.challengeIdx] || '';
+
+    // ── Populate results header ──
+    document.getElementById('results-role-tag').innerHTML =
+      `${role.icon} ${role.title}`;
+    document.getElementById('results-ta-title').textContent = data.label;
+    document.getElementById('results-meta').innerHTML =
+      `Signals scanned from <strong>ClinicalTrials.gov</strong> · <strong>openFDA</strong> · <strong>EMA</strong> · ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+    document.getElementById('results-challenge-note').textContent =
+      challenge ? `↳ Focused on: "${challenge}"` : '';
+
+    // ── Role context banner ──
+    document.getElementById('rcb-icon').style.background = role.iconBg;
+    document.getElementById('rcb-icon').textContent = role.icon;
+    document.getElementById('rcb-title').textContent = role.contextTitle;
+    document.getElementById('rcb-sub').textContent = role.contextSub;
+
+    // ── Divider ──
+    document.querySelector('.section-divider span').textContent =
+      `3 signals detected in ${data.label}`;
+
+    // ── Cards ──
+    document.getElementById('cards-grid').innerHTML = renderCards(data, role);
+
+    // ── CTA personalisation ──
+    document.getElementById('cta-title').innerHTML = role.ctaHeadline.replace(
+      /\.(.*)\.$/, '.<em>$1.</em>'
+    );
+    document.getElementById('cta-sub').textContent = role.ctaSub;
+    document.getElementById('cta-role-line').textContent = role.ctaRoleLine;
+
+    show('screen-results', 'cards-grid');
+
+    // ── Staggered entrance ──
+    document.querySelectorAll('.signal-card').forEach((card, i) => {
+      setTimeout(() => card.classList.add('visible'), i * 90);
+    });
+
+    // ── Pip entrance (after last card) ──
+    const pipWrap = document.getElementById('pip-results');
+    const pipText = document.getElementById('pip-results-text');
+    pipWrap.classList.remove('pip-visible', 'pip-dismissed');
+    pipText.textContent = role.pipQuote;
+    setTimeout(() => pipWrap.classList.add('pip-visible'), 520);
+  });
+}
+
+function dismissPip() {
+  const pip = document.getElementById('pip-results');
+  pip.classList.add('pip-dismissed');
+  setTimeout(() => pip.classList.remove('pip-visible', 'pip-dismissed'), 320);
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+renderRoles();
+</script>
+</body>
+</html>
